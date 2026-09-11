@@ -25,9 +25,9 @@ export const errorHandler = (
   res.status(500).json({
     success: false,
     error: {
-      message: 'Internal server error',
+      message: err.message || 'Internal server error',
       code: 'INTERNAL_SERVER_ERROR',
-      details: env.NODE_ENV === 'development' ? err.stack : undefined,
+      details: err.stack,
     },
   });
 };

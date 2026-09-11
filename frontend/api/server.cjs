@@ -46475,9 +46475,9 @@ var errorHandler = (err, _req, res, _next) => {
   res.status(500).json({
     success: false,
     error: {
-      message: "Internal server error",
+      message: err.message || "Internal server error",
       code: "INTERNAL_SERVER_ERROR",
-      details: env.NODE_ENV === "development" ? err.stack : void 0
+      details: err.stack
     }
   });
 };
