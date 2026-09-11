@@ -65,17 +65,21 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     refetchActivities();
     fetchNotifications();
 
+    const isHosted = typeof window !== 'undefined' && window.location && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
     const rawBaseUrl = (import.meta.env.VITE_API_URL as string) || '';
-    const socketUrl = rawBaseUrl
-      ? rawBaseUrl.startsWith('http')
-        ? rawBaseUrl
-        : `https://${rawBaseUrl}`
-      : undefined;
+    const socketUrl = isHosted
+      ? undefined
+      : rawBaseUrl
+        ? rawBaseUrl.startsWith('http')
+          ? rawBaseUrl
+          : `https://${rawBaseUrl}`
+        : undefined;
 
     // Initialize Socket.io connection with access token
     const newSocket = io(socketUrl, {
       auth: { token: accessToken },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
+      autoConnect: !isHosted,
     });
 
     newSocket.on('connect', () => {

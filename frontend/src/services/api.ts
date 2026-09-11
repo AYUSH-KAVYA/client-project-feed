@@ -6,19 +6,23 @@ export const setAccessToken = (token: string | null) => {
 
 export const getAccessToken = () => accessToken;
 
-const rawBaseUrl = (import.meta.env.VITE_API_URL as string) || '';
-
 function buildUrl(endpoint: string): string {
   if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
     return endpoint;
   }
+
+  // On any hosted deployment (such as *.vercel.app or custom domain),
+  // always use relative URLs to guarantee same-origin requests
+  if (typeof window !== 'undefined' && window.location && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  }
+
+  const rawBaseUrl = (import.meta.env.VITE_API_URL as string) || '';
   if (!rawBaseUrl) {
-    return endpoint;
+    return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   }
-  let base = rawBaseUrl.trim().replace(/\/+$/, '');
-  if (!base.startsWith('http://') && !base.startsWith('https://')) {
-    base = `https://${base}`;
-  }
+
+  const base = rawBaseUrl.trim().replace(/\/+$/, '');
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   return `${base}${cleanEndpoint}`;
 }
