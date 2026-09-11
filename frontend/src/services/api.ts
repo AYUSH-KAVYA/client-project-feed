@@ -61,29 +61,47 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
         credentials: 'include',
       });
 
-      const retryJson = await retryResponse.json();
+      let retryJson: any = null;
+      const retryType = retryResponse.headers.get('content-type');
+      if (retryType && retryType.includes('application/json')) {
+        try {
+          retryJson = await retryResponse.json();
+        } catch {
+          retryJson = null;
+        }
+      }
+
       if (!retryResponse.ok) {
-        const detailMsg = Array.isArray(retryJson.error?.details) && retryJson.error.details.length > 0
+        const detailMsg = Array.isArray(retryJson?.error?.details) && retryJson.error.details.length > 0
           ? retryJson.error.details.map((d: any) => d.message).join(', ')
-          : retryJson.error?.message || 'API Error';
+          : retryJson?.error?.message || `Request failed (${retryResponse.status})`;
         throw new Error(detailMsg);
       }
-      return retryJson.data;
+      return retryJson?.data;
     } else {
       setAccessToken(null);
       window.dispatchEvent(new Event('auth:unauthorized'));
     }
   }
 
-  const json = await response.json();
+  let json: any = null;
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      json = await response.json();
+    } catch {
+      json = null;
+    }
+  }
+
   if (!response.ok) {
-    const detailMsg = Array.isArray(json.error?.details) && json.error.details.length > 0
+    const detailMsg = Array.isArray(json?.error?.details) && json.error.details.length > 0
       ? json.error.details.map((d: any) => d.message).join(', ')
-      : json.error?.message || 'API Error';
+      : json?.error?.message || `Request failed (${response.status}: ${response.statusText || 'Error'})`;
     throw new Error(detailMsg);
   }
 
-  return json.data;
+  return json?.data;
 }
 
 export const api = {
