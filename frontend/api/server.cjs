@@ -46491,13 +46491,27 @@ var import_jsonwebtoken = __toESM(require_jsonwebtoken(), 1);
 
 // server/utils/prisma.ts
 var import_client = require("@prisma/client");
-var prisma = new import_client.PrismaClient({
+function formatDatabaseUrl(rawUrl) {
+  if (!rawUrl) return rawUrl;
+  let url = rawUrl.trim();
+  if (url.includes(":6543") || url.includes("pooler.supabase.com")) {
+    if (!url.includes("pgbouncer=true")) {
+      url += (url.includes("?") ? "&" : "?") + "pgbouncer=true";
+    }
+  }
+  return url;
+}
+var globalForPrisma = globalThis;
+var prisma = globalForPrisma.prisma || new import_client.PrismaClient({
   datasources: {
     db: {
-      url: env.DATABASE_URL
+      url: formatDatabaseUrl(env.DATABASE_URL)
     }
   }
 });
+if (!globalForPrisma.prisma) {
+  globalForPrisma.prisma = prisma;
+}
 
 // server/services/auth.service.ts
 var AuthService = class {
