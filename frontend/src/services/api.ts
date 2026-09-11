@@ -6,7 +6,26 @@ export const setAccessToken = (token: string | null) => {
 
 export const getAccessToken = () => accessToken;
 
-async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
+const rawBaseUrl = (import.meta.env.VITE_API_URL as string) || '';
+
+function buildUrl(endpoint: string): string {
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+    return endpoint;
+  }
+  if (!rawBaseUrl) {
+    return endpoint;
+  }
+  let base = rawBaseUrl.trim().replace(/\/+$/, '');
+  if (!base.startsWith('http://') && !base.startsWith('https://')) {
+    base = `https://${base}`;
+  }
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${base}${cleanEndpoint}`;
+}
+
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const targetUrl = buildUrl(endpoint);
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -16,15 +35,16 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
 
-  const response = await fetch(url, {
+  const response = await fetch(targetUrl, {
     ...options,
     headers,
     credentials: 'include', // Include HttpOnly cookies
   });
 
   // Handle 401 Unauthorized -> try refresh token once
-  if (response.status === 401 && !url.includes('/api/auth/login') && !url.includes('/api/auth/refresh')) {
-    const refreshRes = await fetch('/api/auth/refresh', {
+  if (response.status === 401 && !endpoint.includes('/api/auth/login') && !endpoint.includes('/api/auth/refresh')) {
+    const refreshUrl = buildUrl('/api/auth/refresh');
+    const refreshRes = await fetch(refreshUrl, {
       method: 'POST',
       credentials: 'include',
     });
@@ -35,7 +55,7 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
 
       // Retry original request
       headers['Authorization'] = `Bearer ${refreshData.data.accessToken}`;
-      const retryResponse = await fetch(url, {
+      const retryResponse = await fetch(targetUrl, {
         ...options,
         headers,
         credentials: 'include',

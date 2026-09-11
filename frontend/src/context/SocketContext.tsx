@@ -31,7 +31,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState<number>(0);
 
-  // Fetch initial missed activities (last 20) & notifications from DB when user logs in
   const refetchActivities = async () => {
     if (!user) return;
     try {
@@ -66,8 +65,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     refetchActivities();
     fetchNotifications();
 
+    const rawBaseUrl = (import.meta.env.VITE_API_URL as string) || '';
+    const socketUrl = rawBaseUrl
+      ? rawBaseUrl.startsWith('http')
+        ? rawBaseUrl
+        : `https://${rawBaseUrl}`
+      : undefined;
+
     // Initialize Socket.io connection with access token
-    const newSocket = io({
+    const newSocket = io(socketUrl, {
       auth: { token: accessToken },
       transports: ['websocket'],
     });
