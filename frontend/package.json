@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "prisma generate && tsc && vite build",
-    "vercel-build": "prisma generate && tsc && vite build",
+    "build": "prisma generate && esbuild server/app.ts --bundle --platform=node --target=node18 --format=cjs --outfile=api/server.cjs --external:@prisma/client --external:bcryptjs && tsc && vite build",
+    "vercel-build": "prisma generate && esbuild server/app.ts --bundle --platform=node --target=node18 --format=cjs --outfile=api/server.cjs --external:@prisma/client --external:bcryptjs && tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -42,6 +42,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "esbuild": "^0.25.0",
     "postcss": "^8.5.2",
     "prisma": "^6.4.1",
     "tailwindcss": "^3.4.17",
